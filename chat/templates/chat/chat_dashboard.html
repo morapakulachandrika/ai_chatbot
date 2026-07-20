@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Chat</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            background: #f8f9fc;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            width: 260px;
+            background: #171725;
+            color: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .new-chat {
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            background: #6c4cff;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 25px;
+        }
+
+        .history-title {
+            color: #999;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+
+        .chat-item {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+        .chat-item:hover {
+            background: #29293b;
+        }
+
+        .user-section {
+            margin-top: auto;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .logout {
+            display: block;
+            color: #ff7b7b;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+
+        /* MAIN CHAT */
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            height: 70px;
+            background: white;
+            border-bottom: 1px solid #eee;
+            padding: 0 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .welcome {
+            text-align: center;
+        }
+
+        .welcome h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .welcome p {
+            color: #777;
+        }
+
+        .input-area {
+            padding: 25px;
+        }
+
+        .input-box {
+            max-width: 800px;
+            margin: auto;
+            display: flex;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 8px;
+        }
+
+        .input-box input {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .input-box button {
+            width: 45px;
+            border: none;
+            border-radius: 10px;
+            background: #6c4cff;
+            color: white;
+            cursor: pointer;
+        }
+        .admin-link {
+            display: block;
+            margin-top: 15px;
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            color: #a996ff;
+        }
+
+        .logout {
+            display: block;
+            margin-top: 15px;
+            color: #ff7b7b;
+            text-decoration: none;
+        }
+        .profile-link {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 10px 0;
+        }
+
+        .profile-link:hover {
+            color: #a996ff;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            ✦ AI CHAT
+        </div>
+
+        <button class="new-chat">
+            + New Chat
+        </button>
+
+        <div class="history-title">
+            RECENT CHATS
+        </div>
+
+        <div class="chat-item">
+            💬 New Conversation
+        </div>
+
+        <div class="user-section">
+
+            <div>
+                <a href="{% url 'profile' %}" class="profile-link">
+                    👤 {{ request.user.username }}
+                </a>
+            </div>
+
+            {% if request.user.is_staff %}
+
+                <a href="/admin/" class="admin-link">
+                    ⚙ Admin Panel
+                </a>
+
+            {% endif %}
+
+            <a href="{% url 'logout' %}" class="logout">
+                🚪 Logout
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <main class="main">
+
+        <header class="header">
+
+            <h3>AI Assistant</h3>
+
+            <span>
+                {{ request.user.username }}
+            </span>
+
+        </header>
+
+
+        <section class="chat-area">
+
+            <div class="welcome">
+
+                <h1>How can I help you today?</h1>
+
+                <p>
+                    Ask me anything and start a conversation.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <div class="input-area">
+
+            <div class="input-box">
+
+                <input
+                    type="text"
+                    placeholder="Ask anything..."
+                >
+
+                <button>
+                    ➤
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>

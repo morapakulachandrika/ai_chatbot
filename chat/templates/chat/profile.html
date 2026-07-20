@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Profile | AI Chat</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #f5f7fb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .profile-card {
+            width: 420px;
+            background: white;
+            padding: 40px;
+            border-radius: 18px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .avatar {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 20px;
+            background: #6c4cff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #6c4cff;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #6c4cff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .message {
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #e8f7eb;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .back {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #6c4cff;
+            text-decoration: none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="profile-card">
+
+    <div class="avatar">
+        {{ request.user.username|first|upper }}
+    </div>
+
+    <h1>My Profile</h1>
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+    <form method="POST">
+
+        {% csrf_token %}
+
+        <div class="input-group">
+
+            <label>Username</label>
+
+            <input
+                type="text"
+                name="username"
+                value="{{ request.user.username }}"
+                required
+            >
+
+        </div>
+
+        <div class="input-group">
+
+            <label>Email</label>
+
+            <input
+                type="email"
+                name="email"
+                value="{{ request.user.email }}"
+                required
+            >
+
+        </div>
+
+        <button type="submit">
+            Update Profile
+        </button>
+
+    </form>
+
+    <a
+        href="{% url 'chat_dashboard' %}"
+        class="back"
+    >
+        ← Back to Chat
+    </a>
+
+</div>
+
+</body>
+
+</html>
