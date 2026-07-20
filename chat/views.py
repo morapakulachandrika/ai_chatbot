@@ -8,7 +8,11 @@ from django.contrib import messages
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
-
+import json
+from django.http import JsonResponse
+from .models import Conversation, Message
+from django.http import JsonResponse
+from .models import Conversation, Message
 # =========================
 # REGISTER
 # =========================
@@ -255,9 +259,19 @@ def login_view(request):
 @login_required(login_url="login")
 def chat_dashboard(request):
 
+    conversations = Conversation.objects.filter(
+        user=request.user
+    ).order_by(
+        "-is_pinned",
+        "-updated_at"
+    )
+
     return render(
         request,
-        "chat/chat_dashboard.html"
+        "chat/chat_dashboard.html",
+        {
+            "conversations": conversations
+        }
     )
 
 
@@ -322,3 +336,244 @@ def logout_view(request):
     logout(request)
 
     return redirect("login")
+
+@login_required(login_url="login")
+def send_message(request):
+
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "POST request required."},
+            status=405
+        )
+
+    try:
+        data = json.loads(request.body)
+
+        user_message = data.get(
+            "message",
+            ""
+        ).strip()
+
+        conversation_id = data.get(
+            "conversation_id"
+        )
+
+        if not user_message:
+            return JsonResponse(
+                {"error": "Message cannot be empty."},
+                status=400
+            )
+
+        # Get existing conversation
+        if conversation_id:
+
+            try:
+                conversation = Conversation.objects.get(
+                    id=conversation_id,
+                    user=request.user
+                )
+
+            except Conversation.DoesNotExist:
+
+                return JsonResponse(
+                    {"error": "Conversation not found."},
+                    status=404
+                )
+
+        else:
+
+            # Create a new conversation
+            conversation = Conversation.objects.create(
+                user=request.user,
+                title=user_message[:50]
+            )
+
+        # Save user's message
+        Message.objects.create(
+            conversation=conversation,
+            role="user",
+            content=user_message
+        )
+
+        # Temporary response
+        # We will connect the real AI model next.
+        ai_response = (
+            f"You said: {user_message}"
+        )
+
+        # Save assistant response
+        Message.objects.create(
+            conversation=conversation,
+            role="assistant",
+            content=ai_response
+        )
+
+        return JsonResponse({
+            "success": True,
+            "conversation_id": conversation.id,
+            "conversation_title": conversation.title,
+            "user_message": user_message,
+            "ai_response": ai_response,
+        })
+
+    except json.JSONDecodeError:
+
+        return JsonResponse(
+            {"error": "Invalid JSON request."},
+            status=400
+        )
+
+    except Exception as error:
+
+        print("Send message error:", error)
+
+        return JsonResponse(
+            {"error": "Something went wrong."},
+            status=500
+        )
+# =========================
+# LOAD CONVERSATION
+# =========================
+
+@login_required(login_url="login")
+def load_conversation(request, conversation_id):
+
+    try:
+        conversation = Conversation.objects.get(
+            id=conversation_id,
+            user=request.user
+        )
+
+        conversation_messages = conversation.messages.order_by(
+            "created_at"
+        )
+
+        messages_data = [
+            {
+                "role": message.role,
+                "content": message.content
+            }
+            for message in conversation_messages
+        ]
+
+        return JsonResponse({
+            "success": True,
+            "conversation_id": conversation.id,
+            "title": conversation.title,
+            "messages": messages_data,
+        })
+
+    except Conversation.DoesNotExist:
+
+        return JsonResponse(
+            {
+                "error": "Conversation not found."
+            },
+            status=404
+        )
+@login_required(login_url="login")
+def pin_conversation(request, conversation_id):
+
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "POST request required."},
+            status=405
+        )
+
+    try:
+        conversation = Conversation.objects.get(
+            id=conversation_id,
+            user=request.user
+        )
+
+        # Toggle pin status
+        conversation.is_pinned = not conversation.is_pinned
+        conversation.save()
+
+        return JsonResponse({
+            "success": True,
+            "is_pinned": conversation.is_pinned
+        })
+
+    except Conversation.DoesNotExist:
+        return JsonResponse(
+            {"error": "Conversation not found."},
+            status=404
+        )
+# =========================
+# RENAME CONVERSATION
+# =========================
+
+@login_required(login_url="login")
+def rename_conversation(request, conversation_id):
+
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "POST request required."},
+            status=405
+        )
+
+    try:
+        data = json.loads(request.body)
+
+        new_title = data.get(
+            "title",
+            ""
+        ).strip()
+
+        if not new_title:
+            return JsonResponse(
+                {"error": "Title cannot be empty."},
+                status=400
+            )
+
+        conversation = Conversation.objects.get(
+            id=conversation_id,
+            user=request.user
+        )
+
+        conversation.title = new_title[:200]
+        conversation.save()
+
+        return JsonResponse({
+            "success": True,
+            "title": conversation.title
+        })
+
+    except Conversation.DoesNotExist:
+        return JsonResponse(
+            {"error": "Conversation not found."},
+            status=404
+        )
+
+
+# =========================
+# DELETE CONVERSATION
+# =========================
+
+@login_required(login_url="login")
+def delete_conversation(request, conversation_id):
+
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "POST request required."},
+            status=405
+        )
+
+    try:
+        conversation = Conversation.objects.get(
+            id=conversation_id,
+            user=request.user
+        )
+
+        conversation.delete()
+
+        return JsonResponse({
+            "success": True
+        })
+
+    except Conversation.DoesNotExist:
+        return JsonResponse(
+            {"error": "Conversation not found."},
+            status=404
+        )

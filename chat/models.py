@@ -1,7 +1,4 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
 from django.contrib.auth.models import User
 
 
@@ -11,7 +8,9 @@ class Conversation(models.Model):
         on_delete=models.CASCADE,
         related_name="conversations"
     )
-
+    is_pinned = models.BooleanField(
+    default=False
+    )
     title = models.CharField(
         max_length=200,
         default="New Conversation"

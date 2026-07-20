@@ -24,7 +24,11 @@ urlpatterns = [
         views.profile_view,
         name="profile"
     ),
-
+    path(
+    "send-message/",
+    views.send_message,
+    name="send_message"
+    ),
     path(
     "forgot-password/",
     auth_views.PasswordResetView.as_view(
@@ -71,5 +75,26 @@ urlpatterns = [
             template_name="chat/password_reset_complete.html"
         ),
         name="password_reset_complete",
+    ),
+    path(
+        "conversation/<int:conversation_id>/",
+        views.load_conversation,
+        name="load_conversation",
+    ),
+    path(
+    "conversation/<int:conversation_id>/pin/",
+    views.pin_conversation,
+    name="pin_conversation",
+    ),
+    path(
+    "conversation/<int:conversation_id>/rename/",
+    views.rename_conversation,
+    name="rename_conversation",
+    ),
+
+    path(
+        "conversation/<int:conversation_id>/delete/",
+        views.delete_conversation,
+        name="delete_conversation",
     ),
 ]

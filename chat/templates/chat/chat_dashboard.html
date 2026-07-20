@@ -22,7 +22,9 @@
             background: #f8f9fc;
         }
 
-        /* SIDEBAR */
+        /* =========================
+           SIDEBAR
+        ========================= */
 
         .sidebar {
             width: 260px;
@@ -73,19 +75,45 @@
             padding-top: 20px;
         }
 
-        .logout {
+        .profile-link {
             display: block;
-            color: #ff7b7b;
+            color: white;
             text-decoration: none;
-            margin-top: 10px;
+            padding: 10px 0;
         }
 
-        /* MAIN CHAT */
+        .profile-link:hover {
+            color: #a996ff;
+        }
+
+        .admin-link {
+            display: block;
+            margin-top: 15px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .admin-link:hover {
+            color: #a996ff;
+        }
+
+        .logout {
+            display: block;
+            margin-top: 15px;
+            color: #ff7b7b;
+            text-decoration: none;
+        }
+
+
+        /* =========================
+           MAIN
+        ========================= */
 
         .main {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .header {
@@ -98,14 +126,23 @@
             justify-content: space-between;
         }
 
+
+        /* =========================
+           CHAT AREA
+        ========================= */
+
         .chat-area {
             flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            overflow-y: auto;
+            padding: 30px;
         }
 
         .welcome {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
         }
 
@@ -117,6 +154,62 @@
         .welcome p {
             color: #777;
         }
+
+
+        /* =========================
+           MESSAGES
+        ========================= */
+
+        .messages-container {
+            width: 100%;
+            max-width: 850px;
+            margin: auto;
+            display: none;
+        }
+
+        .message-row {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .user-row {
+            justify-content: flex-end;
+        }
+
+        .assistant-row {
+            justify-content: flex-start;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 13px 17px;
+            border-radius: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: #6c4cff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .assistant-message {
+            background: white;
+            color: #222;
+            border: 1px solid #e5e5e5;
+            border-bottom-left-radius: 4px;
+        }
+
+        .error-message {
+            background: #ffe8e8;
+            color: #c62828;
+        }
+
+
+        /* =========================
+           INPUT
+        ========================= */
 
         .input-area {
             padding: 25px;
@@ -147,40 +240,82 @@
             background: #6c4cff;
             color: white;
             cursor: pointer;
-        }
-        .admin-link {
-            display: block;
-            margin-top: 15px;
-            color: #ffffff;
-            text-decoration: none;
+            font-size: 18px;
         }
 
-        .admin-link:hover {
-            color: #a996ff;
+        .input-box button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .no-chats {
+            color: #777;
+            font-size: 14px;
+            padding: 12px;
+        }
+        .chat-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0;
         }
 
-        .logout {
-            display: block;
-            margin-top: 15px;
-            color: #ff7b7b;
-            text-decoration: none;
+        .chat-item-content {
+            flex: 1;
+            padding: 12px;
+            cursor: pointer;
+            overflow: hidden;
         }
-        .profile-link {
-            display: block;
+
+        .chat-menu-button {
+            background: transparent;
+            border: none;
             color: white;
-            text-decoration: none;
-            padding: 10px 0;
+            font-size: 20px;
+            padding: 8px;
+            cursor: pointer;
         }
 
-        .profile-link:hover {
-            color: #a996ff;
+        .chat-menu {
+            display: none;
+            position: absolute;
+            top: 42px;
+            right: 5px;
+            width: 120px;
+            background: white;
+            border-radius: 8px;
+            padding: 5px;
+            z-index: 100;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-menu button {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 10px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .chat-menu button:hover {
+            background: #f2f2f2;
+        }
+        .delete-option {
+            color: #d32f2f;
         }
 
     </style>
 
 </head>
 
+
 <body>
+
+
+    <!-- =========================
+         SIDEBAR
+    ========================= -->
 
     <aside class="sidebar">
 
@@ -188,35 +323,118 @@
             ✦ AI CHAT
         </div>
 
-        <button class="new-chat">
+
+        <button
+            class="new-chat"
+            id="newChatButton"
+            type="button"
+        >
             + New Chat
         </button>
+
 
         <div class="history-title">
             RECENT CHATS
         </div>
 
-        <div class="chat-item">
-            💬 New Conversation
+
+        <div id="recentChats">
+
+            {% for conversation in conversations %}
+
+            <div class="chat-item">
+
+        <div
+                class="chat-item-content"
+                onclick="loadConversation({{ conversation.id }})"
+        >
+            <span>
+                    {% if conversation.is_pinned %}
+                        📌
+                    {% else %}
+                        💬
+                    {% endif %}
+                </span>
+
+                <span>
+                    {{ conversation.title }}
+                </span>
+            </div>
+
+            <button
+                class="chat-menu-button"
+                onclick="toggleChatMenu(event, {{ conversation.id }})"
+            >
+                ⋮
+            </button>
+
+            <div
+                class="chat-menu"
+                id="chatMenu{{ conversation.id }}"
+            >
+                <button
+                    onclick="pinConversation(event, {{ conversation.id }})"
+                >
+                    {% if conversation.is_pinned %}
+                        📌 Unpin
+                    {% else %}
+                        📌 Pin
+                    {% endif %}
+                </button>
+
+                <button
+                    onclick="renameConversation(event, {{ conversation.id }})"
+                >
+                    ✏️ Rename
+                </button>
+
+                <button
+                    onclick="deleteConversation(event, {{ conversation.id }})"
+                    class="delete-option"
+                >
+                    🗑️ Delete
+                </button>
+            </div>
+
         </div>
+
+            {% empty %}
+
+                <div class="chat-item">
+                    No conversations yet
+                </div>
+
+            {% endfor %}
+
+        </div>
+
 
         <div class="user-section">
 
-            <div>
-                <a href="{% url 'profile' %}" class="profile-link">
-                    👤 {{ request.user.username }}
-                </a>
-            </div>
+            <a
+                href="{% url 'profile' %}"
+                class="profile-link"
+            >
+                👤 {{ request.user.username }}
+            </a>
+
 
             {% if request.user.is_staff %}
 
-                <a href="/admin/" class="admin-link">
+                <a
+                    href="/admin/"
+                    class="admin-link"
+                >
                     ⚙ Admin Panel
                 </a>
 
             {% endif %}
 
-            <a href="{% url 'logout' %}" class="logout">
+
+            <a
+                href="{% url 'logout' %}"
+                class="logout"
+            >
                 🚪 Logout
             </a>
 
@@ -225,11 +443,19 @@
     </aside>
 
 
+
+    <!-- =========================
+         MAIN CHAT
+    ========================= -->
+
     <main class="main">
+
 
         <header class="header">
 
-            <h3>AI Assistant</h3>
+            <h3 id="chatTitle">
+                AI Assistant
+            </h3>
 
             <span>
                 {{ request.user.username }}
@@ -238,11 +464,25 @@
         </header>
 
 
-        <section class="chat-area">
 
-            <div class="welcome">
+        <!-- CHAT AREA -->
 
-                <h1>How can I help you today?</h1>
+        <section
+            class="chat-area"
+            id="chatArea"
+        >
+
+
+            <!-- WELCOME SCREEN -->
+
+            <div
+                class="welcome"
+                id="welcomeScreen"
+            >
+
+                <h1>
+                    How can I help you today?
+                </h1>
 
                 <p>
                     Ask me anything and start a conversation.
@@ -250,8 +490,22 @@
 
             </div>
 
+
+
+            <!-- MESSAGE CONTAINER -->
+
+            <div
+                class="messages-container"
+                id="messagesContainer"
+            >
+            </div>
+
+
         </section>
 
+
+
+        <!-- INPUT AREA -->
 
         <div class="input-area">
 
@@ -259,10 +513,15 @@
 
                 <input
                     type="text"
+                    id="messageInput"
                     placeholder="Ask anything..."
+                    autocomplete="off"
                 >
 
-                <button>
+                <button
+                    type="button"
+                    id="sendButton"
+                >
                     ➤
                 </button>
 
@@ -270,8 +529,648 @@
 
         </div>
 
+
     </main>
+
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================= -->
+
+    <script>
+
+        let conversationId = null;
+
+
+        const messageInput =
+            document.getElementById("messageInput");
+
+        const sendButton =
+            document.getElementById("sendButton");
+
+        const messagesContainer =
+            document.getElementById("messagesContainer");
+
+        const welcomeScreen =
+            document.getElementById("welcomeScreen");
+
+        const chatArea =
+            document.getElementById("chatArea");
+
+        const chatTitle =
+            document.getElementById("chatTitle");
+
+        const newChatButton =
+            document.getElementById("newChatButton");
+
+
+        // =========================
+        // SEND MESSAGE
+        // =========================
+
+        async function sendMessage() {
+
+            const message =
+                messageInput.value.trim();
+
+
+            if (!message) {
+                return;
+            }
+
+
+            // Disable button while waiting
+            sendButton.disabled = true;
+
+
+            // Hide welcome screen
+            welcomeScreen.style.display = "none";
+
+
+            // Show messages container
+            messagesContainer.style.display = "block";
+
+
+            // Display user message
+            addMessage(
+                message,
+                "user"
+            );
+
+
+            // Clear input
+            messageInput.value = "";
+
+
+            try {
+
+                const response = await fetch(
+
+                    "{% url 'send_message' %}",
+
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            "X-CSRFToken":
+                                getCookie(
+                                    "csrftoken"
+                                )
+
+                        },
+
+                        body: JSON.stringify({
+
+                            message: message,
+
+                            conversation_id:
+                                conversationId
+
+                        })
+
+                    }
+
+                );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        data.error ||
+                        "Unable to send message."
+                    );
+
+                }
+
+
+                // Save conversation ID
+                conversationId =
+                    data.conversation_id;
+
+
+                // Update chat title
+                chatTitle.textContent =
+                    data.conversation_title;
+
+
+                // Display assistant response
+                addMessage(
+                    data.ai_response,
+                    "assistant"
+                );
+
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Chat error:",
+                    error
+                );
+
+
+                addMessage(
+                    "Unable to get a response. Please try again.",
+                    "error"
+                );
+
+            }
+
+            finally {
+
+                sendButton.disabled = false;
+
+                messageInput.focus();
+
+            }
+
+        }
+
+
+
+        // =========================
+        // ADD MESSAGE TO SCREEN
+        // =========================
+
+        function addMessage(
+            text,
+            role
+        ) {
+
+            const row =
+                document.createElement("div");
+
+
+            const messageBubble =
+                document.createElement("div");
+
+
+            row.classList.add(
+                "message-row"
+            );
+
+
+            messageBubble.classList.add(
+                "message"
+            );
+
+
+            if (role === "user") {
+
+                row.classList.add(
+                    "user-row"
+                );
+
+                messageBubble.classList.add(
+                    "user-message"
+                );
+
+            }
+
+            else if (
+                role === "assistant"
+            ) {
+
+                row.classList.add(
+                    "assistant-row"
+                );
+
+                messageBubble.classList.add(
+                    "assistant-message"
+                );
+
+            }
+
+            else {
+
+                row.classList.add(
+                    "assistant-row"
+                );
+
+                messageBubble.classList.add(
+                    "error-message"
+                );
+
+            }
+
+
+            // Safe text rendering
+            messageBubble.textContent =
+                text;
+
+
+            row.appendChild(
+                messageBubble
+            );
+
+
+            messagesContainer.appendChild(
+                row
+            );
+
+
+            // Scroll to latest message
+            chatArea.scrollTop =
+                chatArea.scrollHeight;
+
+        }
+
+
+
+        // =========================
+        // ENTER KEY
+        // =========================
+
+        messageInput.addEventListener(
+
+            "keydown",
+
+            function(event) {
+
+                if (
+                    event.key === "Enter"
+                ) {
+
+                    event.preventDefault();
+
+                    sendMessage();
+
+                }
+
+            }
+
+        );
+
+
+
+        // =========================
+        // SEND BUTTON
+        // =========================
+
+        sendButton.addEventListener(
+
+            "click",
+
+            sendMessage
+
+        );
+
+
+
+        // =========================
+        // NEW CHAT
+        // =========================
+
+        newChatButton.addEventListener(
+
+            "click",
+
+            function() {
+
+                conversationId = null;
+
+
+                messagesContainer.innerHTML =
+                    "";
+
+
+                messagesContainer.style.display =
+                    "none";
+
+
+                welcomeScreen.style.display =
+                    "flex";
+
+
+                chatTitle.textContent =
+                    "AI Assistant";
+
+
+                messageInput.value =
+                    "";
+
+
+                messageInput.focus();
+
+            }
+
+        );
+    // =========================
+    // LOAD EXISTING CONVERSATION
+    // =========================
+
+    async function loadConversation(id) {
+
+    try {
+
+        const response = await fetch(
+            `/conversation/${id}/`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                "Unable to load conversation."
+            );
+        }
+
+        // Remember currently opened conversation
+        conversationId = data.conversation_id;
+
+        // Clear previous chat
+        messagesContainer.innerHTML = "";
+
+        // Hide welcome screen
+        welcomeScreen.style.display = "none";
+
+        // Show messages
+        messagesContainer.style.display = "block";
+
+        // Update title
+        chatTitle.textContent = data.title;
+
+        // Display all saved messages
+        data.messages.forEach(function(message) {
+
+            addMessage(
+                message.content,
+                message.role
+            );
+
+        });
+
+        // Scroll to latest message
+        chatArea.scrollTop =
+            chatArea.scrollHeight;
+
+        messageInput.focus();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Load conversation error:",
+            error
+        );
+
+        alert(
+            "Unable to load this conversation."
+        );
+
+    }
+
+    }
+    function toggleChatMenu(event, id) {
+
+    event.stopPropagation();
+
+    const menu =
+        document.getElementById(
+            `chatMenu${id}`
+        );
+
+    document
+        .querySelectorAll(".chat-menu")
+        .forEach(function(item) {
+
+            if (item !== menu) {
+                item.style.display = "none";
+            }
+
+        });
+
+    menu.style.display =
+        menu.style.display === "block"
+            ? "none"
+            : "block";
+}
+
+
+async function pinConversation(event, id) {
+
+    event.stopPropagation();
+
+    try {
+
+        const response = await fetch(
+            `/conversation/${id}/pin/`,
+            {
+                method: "POST",
+
+                headers: {
+                    "X-CSRFToken":
+                        getCookie("csrftoken")
+                }
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error ||
+                "Unable to update pin."
+            );
+        }
+
+        // Refresh so pinned chats move to top
+        window.location.reload();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Pin error:",
+            error
+        );
+
+        alert(
+            "Unable to pin this conversation."
+        );
+
+    }
+
+    }
+    async function renameConversation(event, id) {
+
+    event.stopPropagation();
+
+    const newTitle = prompt(
+        "Enter a new conversation name:"
+    );
+
+    if (newTitle === null) {
+        return;
+    }
+
+    if (!newTitle.trim()) {
+        alert("Conversation name cannot be empty.");
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `/conversation/${id}/rename/`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+
+                body: JSON.stringify({
+                    title: newTitle.trim()
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Unable to rename conversation."
+            );
+        }
+
+        window.location.reload();
+
+    } catch (error) {
+
+        console.error("Rename error:", error);
+
+        alert("Unable to rename this conversation.");
+    }
+}
+
+
+async function deleteConversation(event, id) {
+
+    event.stopPropagation();
+
+    const confirmed = confirm(
+        "Are you sure you want to delete this conversation?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `/conversation/${id}/delete/`,
+            {
+                method: "POST",
+
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken")
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.error || "Unable to delete conversation."
+            );
+        }
+
+        window.location.reload();
+
+    } catch (error) {
+
+        console.error("Delete error:", error);
+
+        alert("Unable to delete this conversation.");
+    }
+    }
+
+        // =========================
+        // GET CSRF COOKIE
+        // =========================
+
+        function getCookie(name) {
+
+            let cookieValue = null;
+
+
+            if (
+                document.cookie &&
+                document.cookie !== ""
+            ) {
+
+                const cookies =
+                    document.cookie.split(";");
+
+
+                for (
+                    let i = 0;
+                    i < cookies.length;
+                    i++
+                ) {
+
+                    const cookie =
+                        cookies[i].trim();
+
+
+                    if (
+
+                        cookie.substring(
+                            0,
+                            name.length + 1
+                        )
+
+                        ===
+
+                        name + "="
+
+                    ) {
+
+                        cookieValue =
+                            decodeURIComponent(
+
+                                cookie.substring(
+                                    name.length + 1
+                                )
+
+                            );
+
+
+                        break;
+
+                    }
+
+                }
+
+            }
+
+
+            return cookieValue;
+
+        }
+
+    </script>
+
 
 </body>
 
-</html>
+</html> 
