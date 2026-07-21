@@ -500,8 +500,195 @@
         .message-action-button:hover {
             background: #eeeeee;
         }
+        .toast-notification {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translate(-50%, -20px);
 
-    </style>
+            width: min(420px, calc(100% - 40px));
+            padding: 14px 16px;
+
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+
+            box-shadow:
+                0 10px 30px rgba(0, 0, 0, 0.12);
+
+            opacity: 0;
+            visibility: hidden;
+
+            transition: all 0.25s ease;
+
+            z-index: 9999;
+        }
+
+        .toast-notification.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, 0);
+        }
+
+        .toast-icon {
+            width: 28px;
+            height: 28px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border-radius: 50%;
+
+            background: #fff3cd;
+            color: #856404;
+
+            font-weight: 700;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            margin-bottom: 3px;
+
+            font-size: 14px;
+            font-weight: 600;
+
+            color: #111827;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            line-height: 1.5;
+
+            color: #6b7280;
+        }
+
+        .toast-close {
+            border: none;
+            background: transparent;
+
+            font-size: 20px;
+            line-height: 1;
+
+            color: #9ca3af;
+
+            cursor: pointer;
+        }
+        let toastTimer = null;
+
+        function showToast(
+            message,
+            title = "AI Assistant"
+        ) {
+
+            const toast =
+                document.getElementById(
+                    "toastNotification"
+                );
+
+            const toastTitle =
+                document.getElementById(
+                    "toastTitle"
+                );
+
+            const toastMessage =
+                document.getElementById(
+                    "toastMessage"
+                );
+
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+
+            toast.classList.add("show");
+
+            clearTimeout(toastTimer);
+
+            toastTimer = setTimeout(
+                hideToast,
+                5000
+            );
+        }
+
+
+        function hideToast() {
+
+            const toast =
+                document.getElementById(
+                    "toastNotification"
+                );
+
+            toast.classList.remove("show");
+        }
+                /* =========================
+        THINKING INDICATOR
+        ========================= */
+
+        .thinking-wrapper {
+            display: flex;
+            justify-content: flex-start;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+        }
+
+        .thinking-bubble {
+            width: 54px;
+            height: 38px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 20px;
+
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .thinking-bubble span {
+            width: 6px;
+            height: 6px;
+
+            background: #666;
+            border-radius: 50%;
+
+            animation: thinkingDot 1.2s infinite ease-in-out;
+        }
+
+        .thinking-bubble span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .thinking-bubble span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes thinkingDot {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            30% {
+                transform: translateY(-4px);
+                opacity: 1;
+            }
+        }
+            </style>
 
 </head>
 
@@ -822,7 +1009,52 @@
         // =========================
         // SEND MESSAGE
         // =========================
+        function showThinkingIndicator() {
 
+            // Prevent duplicate indicator
+            if (
+                document.getElementById(
+                    "thinkingIndicator"
+                )
+            ) {
+                return;
+            }
+
+            const row =
+                document.createElement("div");
+
+            row.id = "thinkingIndicator";
+
+            row.classList.add(
+                "thinking-wrapper"
+            );
+
+            row.innerHTML = `
+                <div class="thinking-bubble">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+
+            messagesContainer.appendChild(row);
+
+            chatArea.scrollTop =
+                        chatArea.scrollHeight;
+                }
+
+
+        function hideThinkingIndicator() {
+
+            const indicator =
+                document.getElementById(
+                    "thinkingIndicator"
+                );
+
+            if (indicator) {
+                indicator.remove();
+            }
+        }
         async function sendMessage() {
 
             const message =
@@ -852,7 +1084,7 @@
                 "user"
             );
 
-
+            showThinkingIndicator();
             // Clear input
             messageInput.value = "";
 
@@ -918,6 +1150,7 @@
 
 
                 // Display assistant response
+                hideThinkingIndicator();
                 addMessage(
                     data.ai_response,
                     "assistant"
@@ -928,11 +1161,13 @@
 
             catch (error) {
 
+                // Remove thinking dots if request fails
+                hideThinkingIndicator();
+
                 console.error(
                     "Chat error:",
                     error
                 );
-
 
                 addMessage(
                     "Unable to get a response. Please try again.",
@@ -1366,9 +1601,10 @@
                 error
             );
 
-            alert(
+            showToast(
                 error.message ||
-                "Unable to regenerate response."
+                "Unable to regenerate response.",
+                "Unable to regenerate"
             );
 
         } finally {
@@ -1920,7 +2156,22 @@ async function deleteConversation(event, id) {
 
     </script>
 
+    <div id="toastNotification" class="toast-notification">
+        <div class="toast-icon">!</div>
 
+        <div class="toast-content">
+            <div id="toastTitle" class="toast-title"></div>
+            <div id="toastMessage" class="toast-message"></div>
+        </div>
+
+        <button
+            type="button"
+            class="toast-close"
+            onclick="hideToast()"
+        >
+            ×
+        </button>
+    </div>
 </body>
 
 </html> 
