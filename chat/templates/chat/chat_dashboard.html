@@ -583,51 +583,7 @@
 
             cursor: pointer;
         }
-        let toastTimer = null;
-
-        function showToast(
-            message,
-            title = "AI Assistant"
-        ) {
-
-            const toast =
-                document.getElementById(
-                    "toastNotification"
-                );
-
-            const toastTitle =
-                document.getElementById(
-                    "toastTitle"
-                );
-
-            const toastMessage =
-                document.getElementById(
-                    "toastMessage"
-                );
-
-            toastTitle.textContent = title;
-            toastMessage.textContent = message;
-
-            toast.classList.add("show");
-
-            clearTimeout(toastTimer);
-
-            toastTimer = setTimeout(
-                hideToast,
-                5000
-            );
-        }
-
-
-        function hideToast() {
-
-            const toast =
-                document.getElementById(
-                    "toastNotification"
-                );
-
-            toast.classList.remove("show");
-        }
+        
                 /* =========================
         THINKING INDICATOR
         ========================= */
@@ -688,7 +644,204 @@
                 opacity: 1;
             }
         }
-            </style>
+        /* =========================
+        ATTACHMENT BUTTON
+        ========================= */
+
+        .attachment-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .attachment-button {
+            width: 42px !important;
+            height: 42px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-shrink: 0;
+
+            border: none !important;
+            border-radius: 50% !important;
+
+            background: transparent !important;
+            color: #555 !important;
+
+            font-size: 28px !important;
+            font-weight: 300;
+
+            cursor: pointer;
+        }
+
+        .attachment-button:hover {
+            background: #f0f0f0 !important;
+        }
+
+
+        /* =========================
+        ATTACHMENT MENU
+        ========================= */
+
+        .attachment-menu {
+            position: absolute;
+
+            bottom: 52px;
+            left: 0;
+
+            width: 190px;
+            padding: 7px;
+
+            display: none;
+
+            background: #ffffff;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+
+            box-shadow:
+                0 8px 25px rgba(0, 0, 0, 0.12);
+
+            z-index: 1000;
+        }
+
+        .attachment-menu.show {
+            display: block;
+        }
+
+        .attachment-menu button {
+            width: 100%;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            padding: 11px 12px;
+
+            border: none;
+            border-radius: 8px;
+
+            background: transparent;
+            color: #333;
+
+            font-size: 14px;
+            text-align: left;
+
+            cursor: pointer;
+        }
+
+        .attachment-menu button:hover {
+            background: #f5f5f5;
+        }
+        /* =========================
+   ATTACHMENT PREVIEW
+    ========================= */
+
+    .attachment-preview {
+        display: none;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto 10px;
+    }
+
+    .attachment-preview.show {
+        display: flex;
+    }
+
+    .selected-attachment {
+        position: relative;
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        max-width: 320px;
+        padding: 10px 38px 10px 10px;
+
+        background: #ffffff;
+        border: 1px solid #dddddd;
+        border-radius: 12px;
+
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .attachment-thumbnail {
+        width: 48px;
+        height: 48px;
+
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .attachment-file-icon {
+        width: 48px;
+        height: 48px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #f3f3f3;
+        border-radius: 8px;
+
+        font-size: 24px;
+    }
+
+    .attachment-details {
+        min-width: 0;
+    }
+
+    .attachment-name {
+        max-width: 190px;
+
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .attachment-type {
+        margin-top: 3px;
+
+        font-size: 11px;
+        color: #777777;
+    }
+
+    .remove-attachment {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+
+        width: 24px;
+        height: 24px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+
+        background: #eeeeee;
+        color: #555555;
+
+        font-size: 17px;
+        cursor: pointer;
+        }
+
+        .remove-attachment:hover {
+            background: #dddddd;
+        }
+        .attachment-preview.show {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    </style>
 
 </head>
 
@@ -949,24 +1102,87 @@
         <!-- INPUT AREA -->
 
         <div class="input-area">
-
+            <div
+                id="attachmentPreview"
+                class="attachment-preview"
+            ></div>
             <div class="input-box">
 
-                <input
-                    type="text"
-                    id="messageInput"
-                    placeholder="Ask anything..."
-                    autocomplete="off"
-                >
+            <!-- ATTACHMENT BUTTON -->
+            <div class="attachment-container">
 
                 <button
                     type="button"
-                    id="sendButton"
+                    id="attachmentButton"
+                    class="attachment-button"
+                    title="Attach files"
                 >
-                    ➤
+                    +
                 </button>
 
-            </div>
+                <!-- ATTACHMENT MENU -->
+                <div
+                    id="attachmentMenu"
+                    class="attachment-menu"
+                >
+
+                    <button
+                        type="button"
+                        id="uploadFileButton"
+                    >
+                        📄 Upload File
+                    </button>
+
+                    <button
+                        type="button"
+                        id="uploadImageButton"
+                    >
+                        🖼️ Upload Image
+                    </button>
+
+                </div>
+
+
+        <!-- DOCUMENT INPUT -->
+        <!-- DOCUMENT INPUT -->
+        <input
+            type="file"
+            id="fileInput"
+            accept=".pdf,.txt,.doc,.docx"
+            multiple
+            hidden
+        >
+
+        <!-- IMAGE INPUT -->
+        <input
+            type="file"
+            id="imageInput"
+            accept="image/*"
+            multiple
+            hidden
+        >
+
+    </div>
+
+
+    <!-- MESSAGE INPUT -->
+    <input
+        type="text"
+        id="messageInput"
+        placeholder="Ask anything..."
+        autocomplete="off"
+    >
+
+
+    <!-- SEND BUTTON -->
+    <button
+        type="button"
+        id="sendButton"
+    >
+        ➤
+    </button>
+
+        </div>
 
         </div>
 
@@ -982,30 +1198,187 @@
     <script>
 
         let conversationId = null;
+        let toastTimer = null;
+
+        function showToast(
+            message,
+            title = "AI Assistant"
+        ) {
+
+            const toast =
+                document.getElementById(
+                    "toastNotification"
+                );
+
+            const toastTitle =
+                document.getElementById(
+                    "toastTitle"
+                );
+
+            const toastMessage =
+                document.getElementById(
+                    "toastMessage"
+                );
+
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+
+            toast.classList.add("show");
+
+            clearTimeout(toastTimer);
+
+            toastTimer = setTimeout(
+                hideToast,
+                5000
+            );
+        }
 
 
-        const messageInput =
-            document.getElementById("messageInput");
+        function hideToast() {
 
-        const sendButton =
-            document.getElementById("sendButton");
+            const toast =
+                document.getElementById(
+                    "toastNotification"
+                );
 
-        const messagesContainer =
-            document.getElementById("messagesContainer");
-
-        const welcomeScreen =
-            document.getElementById("welcomeScreen");
-
-        const chatArea =
-            document.getElementById("chatArea");
-
-        const chatTitle =
-            document.getElementById("chatTitle");
-
-        const newChatButton =
-            document.getElementById("newChatButton");
+            toast.classList.remove("show");
+        }
 
 
+        const messageInput = document.getElementById("messageInput");
+
+        const sendButton = document.getElementById("sendButton");
+
+        const messagesContainer = document.getElementById("messagesContainer");
+
+        const welcomeScreen = document.getElementById("welcomeScreen");
+
+        const chatArea = document.getElementById("chatArea");
+
+        const chatTitle = document.getElementById("chatTitle");
+
+        const newChatButton = document.getElementById("newChatButton");
+
+        const attachmentButton = document.getElementById("attachmentButton");
+
+        const attachmentMenu = document.getElementById("attachmentMenu");
+
+        const uploadFileButton = document.getElementById("uploadFileButton");
+
+        const uploadImageButton = document.getElementById("uploadImageButton");
+
+        const fileInput = document.getElementById("fileInput");
+
+        const imageInput = document.getElementById("imageInput");
+        const attachmentPreview = document.getElementById("attachmentPreview" );
+
+        let selectedAttachments = [];
+        // Open / close attachment menu
+        attachmentButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.stopPropagation();
+
+                attachmentMenu.classList.toggle(
+                    "show"
+                );
+            }
+        );
+
+
+        // Open document picker
+        uploadFileButton.addEventListener(
+            "click",
+            function () {
+
+                attachmentMenu.classList.remove(
+                    "show"
+                );
+
+                fileInput.click();
+            }
+        );
+
+
+        // Open image picker
+        uploadImageButton.addEventListener(
+            "click",
+            function () {
+
+                attachmentMenu.classList.remove(
+                    "show"
+                );
+
+                imageInput.click();
+            }
+        );
+
+
+        // Prevent clicks inside menu from closing unexpectedly
+        attachmentMenu.addEventListener(
+            "click",
+            function (event) {
+
+                event.stopPropagation();
+            }
+        );
+
+
+        // Close menu when clicking outside
+        document.addEventListener(
+            "click",
+            function () {
+
+                attachmentMenu.classList.remove(
+                    "show"
+                );
+            }
+        );
+        fileInput.addEventListener(
+            "change",
+            function () {
+
+                const files =
+                    Array.from(fileInput.files);
+
+                files.forEach(function (file) {
+
+                    selectedAttachments.push({
+                        file: file,
+                        isImage: false
+                    });
+
+                });
+
+                renderAttachmentPreviews();
+
+                fileInput.value = "";
+            }
+        );
+
+
+        imageInput.addEventListener(
+            "change",
+            function () {
+
+                const files =
+                    Array.from(imageInput.files);
+
+                files.forEach(function (file) {
+
+                    selectedAttachments.push({
+                        file: file,
+                        isImage: true
+                    });
+
+                });
+
+                renderAttachmentPreviews();
+
+                imageInput.value = "";
+            }
+        );
         // =========================
         // SEND MESSAGE
         // =========================
@@ -1061,7 +1434,10 @@
                 messageInput.value.trim();
 
 
-            if (!message) {
+            if (
+                !message &&
+                selectedAttachments.length === 0
+            ) {
                 return;
             }
 
@@ -1091,38 +1467,47 @@
 
             try {
 
+                const formData =
+                    new FormData();
+
+                formData.append(
+                    "message",
+                    message
+                );
+
+                if (conversationId) {
+
+                    formData.append(
+                        "conversation_id",
+                        conversationId
+                    );
+                }
+
+                selectedAttachments.forEach(
+                function (item) {
+
+                    formData.append(
+                        "attachments",
+                        item.file
+                    );
+                }
+            );
+
+
                 const response = await fetch(
-
-                    "{% url 'send_message' %}",
-
+                    "/send-message/",
                     {
-
                         method: "POST",
 
                         headers: {
-
-                            "Content-Type":
-                                "application/json",
-
                             "X-CSRFToken":
-                                getCookie(
-                                    "csrftoken"
-                                )
-
+                                getCookie("csrftoken")
                         },
 
-                        body: JSON.stringify({
-
-                            message: message,
-
-                            conversation_id:
-                                conversationId
-
-                        })
-
+                        body: formData
                     }
+        );
 
-                );
 
 
                 const data =
@@ -1155,6 +1540,13 @@
                     data.ai_response,
                     "assistant"
                 );
+                // Clear attachments after successful response
+                selectedAttachments = [];
+
+                fileInput.value = "";
+                imageInput.value = "";
+
+                renderAttachmentPreviews();
 
 
             }
@@ -2153,7 +2545,146 @@ async function deleteConversation(event, id) {
             return cookieValue;
 
         }
+        function renderAttachmentPreviews() {
 
+            attachmentPreview.innerHTML = "";
+
+            selectedAttachments.forEach(
+                function (item, index) {
+
+            const attachment =
+                document.createElement("div");
+
+            attachment.classList.add(
+                "selected-attachment"
+            );
+
+
+            if (item.isImage) {
+
+                const image =
+                    document.createElement("img");
+
+                image.src =
+                    URL.createObjectURL(
+                        item.file
+                    );
+
+                image.classList.add(
+                    "attachment-thumbnail"
+                );
+
+                attachment.appendChild(
+                    image
+                );
+
+            } else {
+
+                const icon =
+                    document.createElement("div");
+
+                icon.classList.add(
+                    "attachment-file-icon"
+                );
+
+                icon.textContent = "📄";
+
+                attachment.appendChild(
+                    icon
+                );
+            }
+
+
+            const details =
+                document.createElement("div");
+
+            details.classList.add(
+                "attachment-details"
+            );
+
+
+            const fileName =
+                document.createElement("div");
+
+            fileName.classList.add(
+                "attachment-name"
+            );
+
+            fileName.textContent =
+                item.file.name;
+
+
+            const fileType =
+                document.createElement("div");
+
+            fileType.classList.add(
+                "attachment-type"
+            );
+
+            fileType.textContent =
+                item.isImage
+                    ? "Image"
+                    : "Document";
+
+
+            details.appendChild(fileName);
+            details.appendChild(fileType);
+
+
+            const removeButton =
+                document.createElement("button");
+
+            removeButton.type = "button";
+
+            removeButton.classList.add(
+                "remove-attachment"
+            );
+
+            removeButton.textContent = "×";
+
+            removeButton.addEventListener(
+                "click",
+                function () {
+
+                    selectedAttachments.splice(
+                        index,
+                        1
+                    );
+
+                    renderAttachmentPreviews();
+                }
+            );
+
+
+            attachment.appendChild(details);
+            attachment.appendChild(
+                removeButton
+            );
+
+            attachmentPreview.appendChild(
+                attachment
+            );
+        }
+    );
+
+
+        if (selectedAttachments.length > 0) {
+
+            attachmentPreview.classList.add(
+                "show"
+            );
+
+        } else {
+
+            attachmentPreview.classList.remove(
+                "show"
+            );
+        }
+    }
+
+
+    
+    
     </script>
 
     <div id="toastNotification" class="toast-notification">

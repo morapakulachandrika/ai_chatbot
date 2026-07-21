@@ -12,7 +12,7 @@ import json
 from django.http import JsonResponse
 from .models import Conversation, Message
 from google import genai
-
+from google.genai import types
 client = genai.Client(
     api_key=settings.GEMINI_API_KEY
 )
@@ -377,22 +377,27 @@ def send_message(request):
         )
 
     try:
-        data = json.loads(request.body)
-
-        user_message = data.get(
+        user_message = request.POST.get(
             "message",
             ""
         ).strip()
 
-        conversation_id = data.get(
+        conversation_id = request.POST.get(
             "conversation_id"
         )
 
-        if not user_message:
-            return JsonResponse(
-                {"error": "Message cannot be empty."},
-                status=400
+        attachments = request.FILES.getlist(
+                "attachments"
             )
+
+        if not user_message and not attachments:
+            return JsonResponse(
+        {
+            "error":
+            "Please enter a message or attach a file."
+        },
+        status=400
+    )
 
         # =========================
         # GET OR CREATE CONVERSATION
@@ -471,12 +476,35 @@ def send_message(request):
         """
 
         # =========================
+
+
+                # =========================
+        # PREPARE CONTENT FOR GEMINI
+        # =========================
+
+        gemini_contents = [prompt]
+
+        for attachment in attachments:
+
+            # Read uploaded file
+            file_bytes = attachment.read()
+
+            # Add file/image to Gemini request
+            gemini_contents.append(
+                types.Part.from_bytes(
+                    data=file_bytes,
+                    mime_type=attachment.content_type
+                )
+            )
+
+
+        # =========================
         # GET GEMINI RESPONSE
         # =========================
 
         response = client.models.generate_content(
             model="gemini-3-flash-preview",
-            contents=prompt
+            contents=gemini_contents
         )
 
         ai_response = response.text

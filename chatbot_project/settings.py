@@ -28,10 +28,10 @@ SECRET_KEY = 'django-insecure-ly__ldut$2o1hdy#c$q^w)$$=q@gi67klws^16-57c2-n0&$1t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*",'192.168.0.103']
+ALLOWED_HOSTS = ["*",'192.168.0.101']
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://192.168.0.103:9000",
+    "http://192.168.0.101:9000",
 ]
 # Application definition
 
