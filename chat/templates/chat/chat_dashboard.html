@@ -49,9 +49,6 @@
             color: #9292a5;
         }
 
-        .sidebar-navigation {
-            margin-bottom: 25px;
-        }
 
         .nav-item {
             width: 100%;
@@ -91,14 +88,64 @@
            SIDEBAR
         ========================= */
 
-        .sidebar {
-            width: 260px;
-            background: #171725;
-            color: white;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
+      
+
+        .logo {
+            flex-shrink: 0;
         }
+
+        .new-chat {
+            flex-shrink: 0;
+        }
+
+        /* SEARCH MUST STAY VISIBLE */
+        .chat-search {
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            padding: 11px 13px;
+            margin-bottom: 18px;
+
+            background: #202031;
+            border: 1px solid #343449;
+            border-radius: 10px;
+        }
+       
+
+        
+
+       
+
+
+        
+
+        .nav-item {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            padding: 11px 10px;
+
+            border: none;
+            border-radius: 8px;
+
+            background: transparent;
+            color: #ddd;
+
+            text-decoration: none;
+        }
+
+       
+
+        .history-title {
+            margin-bottom: 10px;
+        }
+
+       
 
         .logo {
             font-size: 22px;
@@ -134,11 +181,7 @@
             background: #29293b;
         }
 
-        .user-section {
-            margin-top: auto;
-            border-top: 1px solid #333;
-            padding-top: 20px;
-        }
+       
 
         .profile-link {
             display: block;
@@ -841,6 +884,53 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            padding: 20px;
+
+            display: flex;
+            flex-direction: column;
+
+            background: #171725;
+            color: white;
+
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+            .logo,
+            .new-chat,
+            .chat-search,
+            .sidebar-navigation {
+                flex-shrink: 0;
+        }
+
+        .sidebar-navigation {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 15px;
+        }
+
+        .sidebar-chat-section {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 3px;
+        }
+
+        .user-section {
+            flex-shrink: 0;
+            margin-top: 10px;
+            padding-top: 12px;
+            padding-bottom: 5px;
+
+            border-top: 1px solid #333;
+            background: #171725;
+        }
+          
     </style>
 
 </head>
@@ -855,52 +945,57 @@
 
     <aside class="sidebar">
 
-        <div class="logo">
-            ✦ AI CHAT
-        </div>
+    <div class="logo">
+        ✦ AI CHAT
+    </div>
 
-
-        <button
-            class="new-chat"
-            id="newChatButton"
-            type="button"
-        >
-            + New Chat
-        </button>
-        <div class="chat-search">
-    <span>⌕</span>
-
-    <input
-        type="text"
-        id="chatSearch"
-        placeholder="Search chats..."
+    <button
+        class="new-chat"
+        id="newChatButton"
+        type="button"
     >
-</div>
+        + New Chat
+    </button>
 
-        <div class="sidebar-navigation">
+    <!-- SEARCH -->
+    <div class="chat-search">
+        <span>⌕</span>
 
-            <a
-                href="{% url 'chat_dashboard' %}?view=all"
-                class="nav-item {% if view_type == 'all' %}active{% endif %}"
-            >
-                💬 All Chats
-            </a>
+        <input
+            type="text"
+            id="chatSearch"
+            placeholder="Search chats..."
+        >
+    </div>
 
-            <a
-                href="{% url 'chat_dashboard' %}?view=pinned"
-                class="nav-item {% if view_type == 'pinned' %}active{% endif %}"
-            >
-                📌 Pinned
-            </a>
+    <!-- NAVIGATION -->
+    <div class="sidebar-navigation">
 
-            <a
-                href="{% url 'chat_dashboard' %}?view=archived"
-                class="nav-item {% if view_type == 'archived' %}active{% endif %}"
-            >
-                🗃 Archived
-            </a>
+        <a
+            href="{% url 'chat_dashboard' %}?view=all"
+            class="nav-item {% if view_type == 'all' %}active{% endif %}"
+        >
+            💬 All Chats
+        </a>
 
-        </div>
+        <a
+            href="{% url 'chat_dashboard' %}?view=pinned"
+            class="nav-item {% if view_type == 'pinned' %}active{% endif %}"
+        >
+            📌 Pinned
+        </a>
+
+        <a
+            href="{% url 'chat_dashboard' %}?view=archived"
+            class="nav-item {% if view_type == 'archived' %}active{% endif %}"
+        >
+            🗃 Archived
+        </a>
+
+    </div>
+
+    <!-- ONLY THIS SECTION SCROLLS -->
+    <div class="sidebar-chat-section">
 
         <div class="history-title">
 
@@ -917,84 +1012,84 @@
 
         </div>
 
-
         <div id="recentChats">
 
             {% for conversation in conversations %}
 
-            <div
-                class="chat-item"
-                data-title="{{ conversation.title|lower }}"
-            >
-
-        <div
-                class="chat-item-content"
-                onclick="loadConversation({{ conversation.id }})"
-        >
-            <span>
-                    {% if conversation.is_pinned %}
-                        📌
-                    {% else %}
-                        💬
-                    {% endif %}
-                </span>
-
-                <span class="chat-title-text">
-                    {{ conversation.title }}
-                </span>
-            </div>
-
-            <button
-                class="chat-menu-button"
-                onclick="toggleChatMenu(event, {{ conversation.id }})"
-            >
-                ⋮
-            </button>
-
-            <div
-                class="chat-menu"
-                id="chatMenu{{ conversation.id }}"
-            >
-                <button
-                    onclick="pinConversation(event, {{ conversation.id }})"
+                <div
+                    class="chat-item"
+                    data-title="{{ conversation.title|lower }}"
                 >
-                    {% if conversation.is_pinned %}
-                        📌 Unpin
-                    {% else %}
-                        📌 Pin
-                    {% endif %}
-                </button>
 
-                <button
-                    onclick="renameConversation(event, {{ conversation.id }})"
-                >
-                    ✏️ Rename
-                </button>
-                <button
-                    onclick="archiveConversation(
-                        event,
-                        {{ conversation.id }}
-                    )"
-                >
-                    {% if conversation.is_archived %}
-                        📤 Unarchive
-                    {% else %}
-                        🗃 Archive
-                    {% endif %}
-                </button>
-                <button
-                    onclick="deleteConversation(event, {{ conversation.id }})"
-                    class="delete-option"
-                >
-                    🗑️ Delete
-                </button>
-            </div>
+                    <div
+                        class="chat-item-content"
+                        onclick="loadConversation({{ conversation.id }})"
+                    >
+                        <span>
+                            {% if conversation.is_pinned %}
+                                📌
+                            {% else %}
+                                💬
+                            {% endif %}
+                        </span>
 
-        </div>
+                        <span class="chat-title-text">
+                            {{ conversation.title }}
+                        </span>
+                    </div>
+
+                    <button
+                        class="chat-menu-button"
+                        onclick="toggleChatMenu(event, {{ conversation.id }})"
+                    >
+                        ⋮
+                    </button>
+
+                    <div
+                        class="chat-menu"
+                        id="chatMenu{{ conversation.id }}"
+                    >
+
+                        <button
+                            onclick="pinConversation(event, {{ conversation.id }})"
+                        >
+                            {% if conversation.is_pinned %}
+                                📌 Unpin
+                            {% else %}
+                                📌 Pin
+                            {% endif %}
+                        </button>
+
+                        <button
+                            onclick="renameConversation(event, {{ conversation.id }})"
+                        >
+                            ✏️ Rename
+                        </button>
+
+                        <button
+                            onclick="archiveConversation(event, {{ conversation.id }})"
+                        >
+                            {% if conversation.is_archived %}
+                                📤 Unarchive
+                            {% else %}
+                                🗃 Archive
+                            {% endif %}
+                        </button>
+
+                        <button
+                            onclick="deleteConversation(event, {{ conversation.id }})"
+                            class="delete-option"
+                        >
+                            🗑️ Delete
+                        </button>
+
+                    </div>
+
+                </div>
 
             {% empty %}
 
-                <div class="chat-item">
+                <div class="no-chats">
                     No conversations yet
                 </div>
 
@@ -1002,39 +1097,39 @@
 
         </div>
 
+    </div>
 
-        <div class="user-section">
+    <!-- FIXED BOTTOM SECTION -->
+    <div class="user-section">
 
-            <a
-                href="{% url 'profile' %}"
-                class="profile-link"
-            >
-                👤 {{ request.user.username }}
-            </a>
+        <a
+            href="{% url 'profile' %}"
+            class="profile-link"
+        >
+            👤 {{ request.user.username }}
+        </a>
 
-
-            {% if request.user.is_staff %}
-
-                <a
-                    href="/admin/"
-                    class="admin-link"
-                >
-                    ⚙ Admin Panel
-                </a>
-
-            {% endif %}
-
+        {% if request.user.is_staff %}
 
             <a
-                href="{% url 'logout' %}"
-                class="logout"
+                href="/admin/"
+                class="admin-link"
             >
-                🚪 Logout
+                ⚙ Admin Panel
             </a>
 
-        </div>
+        {% endif %}
 
-    </aside>
+        <a
+            href="{% url 'logout' %}"
+            class="logout"
+        >
+            🚪 Logout
+        </a>
+
+    </div>
+
+</aside>
 
 
 
