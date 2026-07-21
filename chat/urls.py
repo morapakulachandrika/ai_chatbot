@@ -91,7 +91,16 @@ urlpatterns = [
     views.rename_conversation,
     name="rename_conversation",
     ),
-
+    path(
+    "conversation/<int:conversation_id>/archive/",
+    views.archive_conversation,
+    name="archive_conversation",
+    ),
+    path(
+    "conversation/<int:conversation_id>/regenerate/",
+    views.regenerate_response,
+    name="regenerate_response"
+    ),
     path(
         "conversation/<int:conversation_id>/delete/",
         views.delete_conversation,

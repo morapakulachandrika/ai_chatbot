@@ -3,17 +3,25 @@ from django.contrib.auth.models import User
 
 
 class Conversation(models.Model):
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="conversations"
     )
-    is_pinned = models.BooleanField(
-    default=False
-    )
+
     title = models.CharField(
         max_length=200,
         default="New Conversation"
+    )
+
+    is_pinned = models.BooleanField(
+        default=False
+    )
+
+    # NEW
+    is_archived = models.BooleanField(
+        default=False
     )
 
     created_at = models.DateTimeField(

@@ -1,5 +1,5 @@
 import re
-
+# from openai import OpenAI
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -11,12 +11,17 @@ from django.core.mail import EmailMultiAlternatives
 import json
 from django.http import JsonResponse
 from .models import Conversation, Message
-from django.http import JsonResponse
-from .models import Conversation, Message
+from google import genai
+
+client = genai.Client(
+    api_key=settings.GEMINI_API_KEY
+)
 # =========================
 # REGISTER
 # =========================
-
+# client = OpenAI(
+#     api_key=settings.OPENAI_API_KEY
+# )
 def register_view(request):
 
     if request.user.is_authenticated:
@@ -259,22 +264,48 @@ def login_view(request):
 @login_required(login_url="login")
 def chat_dashboard(request):
 
-    conversations = Conversation.objects.filter(
-        user=request.user
-    ).order_by(
-        "-is_pinned",
-        "-updated_at"
+    view_type = request.GET.get(
+        "view",
+        "all"
     )
+
+    if view_type == "archived":
+
+        conversations = Conversation.objects.filter(
+            user=request.user,
+            is_archived=True
+        ).order_by(
+            "-updated_at"
+        )
+
+    elif view_type == "pinned":
+
+        conversations = Conversation.objects.filter(
+            user=request.user,
+            is_pinned=True,
+            is_archived=False
+        ).order_by(
+            "-updated_at"
+        )
+
+    else:
+
+        conversations = Conversation.objects.filter(
+            user=request.user,
+            is_archived=False
+        ).order_by(
+            "-is_pinned",
+            "-updated_at"
+        )
 
     return render(
         request,
         "chat/chat_dashboard.html",
         {
-            "conversations": conversations
+            "conversations": conversations,
+            "view_type": view_type,
         }
     )
-
-
 # =========================
 # PROFILE
 # =========================
@@ -336,7 +367,6 @@ def logout_view(request):
     logout(request)
 
     return redirect("login")
-
 @login_required(login_url="login")
 def send_message(request):
 
@@ -364,7 +394,10 @@ def send_message(request):
                 status=400
             )
 
-        # Get existing conversation
+        # =========================
+        # GET OR CREATE CONVERSATION
+        # =========================
+
         if conversation_id:
 
             try:
@@ -374,7 +407,6 @@ def send_message(request):
                 )
 
             except Conversation.DoesNotExist:
-
                 return JsonResponse(
                     {"error": "Conversation not found."},
                     status=404
@@ -382,31 +414,86 @@ def send_message(request):
 
         else:
 
-            # Create a new conversation
             conversation = Conversation.objects.create(
                 user=request.user,
                 title=user_message[:50]
             )
 
-        # Save user's message
+        # =========================
+        # SAVE USER MESSAGE
+        # =========================
+
         Message.objects.create(
             conversation=conversation,
             role="user",
             content=user_message
         )
 
-        # Temporary response
-        # We will connect the real AI model next.
-        ai_response = (
-            f"You said: {user_message}"
+        # =========================
+        # LOAD CONVERSATION HISTORY
+        # =========================
+
+        conversation_messages = (
+            conversation.messages.order_by(
+                "created_at"
+            )
         )
 
-        # Save assistant response
+        history_text = ""
+
+        for message in conversation_messages:
+
+            if message.role == "user":
+                history_text += (
+                    f"User: {message.content}\n"
+                )
+
+            elif message.role == "assistant":
+                history_text += (
+                    f"Assistant: {message.content}\n"
+                )
+
+        # =========================
+        # CREATE GEMINI PROMPT
+        # =========================
+
+        prompt = f"""
+            You are a helpful, professional AI assistant.
+
+            Answer clearly, accurately, and concisely.
+
+            Continue the following conversation naturally.
+
+            Conversation:
+            {history_text}
+
+            Assistant:
+        """
+
+        # =========================
+        # GET GEMINI RESPONSE
+        # =========================
+
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt
+        )
+
+        ai_response = response.text
+
+        # =========================
+        # SAVE AI RESPONSE
+        # =========================
+
         Message.objects.create(
             conversation=conversation,
             role="assistant",
             content=ai_response
         )
+
+        # =========================
+        # RETURN RESPONSE
+        # =========================
 
         return JsonResponse({
             "success": True,
@@ -420,15 +507,40 @@ def send_message(request):
 
         return JsonResponse(
             {"error": "Invalid JSON request."},
-            status=400
+                status=400
         )
 
     except Exception as error:
 
-        print("Send message error:", error)
+        print(
+            "Send message error:",
+            repr(error)
+        )
+
+        error_message = str(error)
+
+        if (
+            "RESOURCE_EXHAUSTED" in error_message
+            or "429" in error_message
+            or "quota" in error_message.lower()
+        ):
+            return JsonResponse(
+                {
+                    "error": (
+                        "You've reached today's free AI usage limit. "
+                        "Please try again after your quota resets."
+                    )
+                },
+                status=429
+            )
 
         return JsonResponse(
-            {"error": "Something went wrong."},
+            {
+                "error": (
+                    "Unable to get an AI response right now. "
+                    "Please try again later."
+                )
+            },
             status=500
         )
 # =========================
@@ -550,7 +662,37 @@ def rename_conversation(request, conversation_id):
 # =========================
 # DELETE CONVERSATION
 # =========================
+@login_required(login_url="login")
+def archive_conversation(request, conversation_id):
 
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "POST request required."},
+            status=405
+        )
+
+    try:
+        conversation = Conversation.objects.get(
+            id=conversation_id,
+            user=request.user
+        )
+
+        # Toggle archive status
+        conversation.is_archived = not conversation.is_archived
+        conversation.save(
+            update_fields=["is_archived"]
+        )
+
+        return JsonResponse({
+            "success": True,
+            "is_archived": conversation.is_archived
+        })
+
+    except Conversation.DoesNotExist:
+        return JsonResponse(
+            {"error": "Conversation not found."},
+            status=404
+        )
 @login_required(login_url="login")
 def delete_conversation(request, conversation_id):
 
@@ -576,4 +718,147 @@ def delete_conversation(request, conversation_id):
         return JsonResponse(
             {"error": "Conversation not found."},
             status=404
+        )
+@login_required(login_url="login")
+def regenerate_response(request, conversation_id):
+
+    if request.method != "POST":
+        return JsonResponse(
+            {"error": "POST request required."},
+            status=405
+        )
+
+    try:
+        conversation = Conversation.objects.get(
+            id=conversation_id,
+            user=request.user
+        )
+
+        # Get the latest assistant response
+        last_assistant_message = (
+            conversation.messages
+            .filter(role="assistant")
+            .order_by("-created_at")
+            .first()
+        )
+
+        # Build history, excluding the latest AI response
+        conversation_messages = (
+            conversation.messages
+            .order_by("created_at")
+        )
+
+        history_text = ""
+
+        for message in conversation_messages:
+
+            if (
+                last_assistant_message
+                and message.id == last_assistant_message.id
+            ):
+                continue
+
+            if message.role == "user":
+                history_text += (
+                    f"User: {message.content}\n"
+                )
+
+            elif message.role == "assistant":
+                history_text += (
+                    f"Assistant: {message.content}\n"
+                )
+
+        if not history_text.strip():
+            return JsonResponse(
+                {"error": "No conversation history found."},
+                status=400
+            )
+
+        # Same prompt style as send_message()
+        prompt = f"""
+        You are a helpful, professional AI assistant.
+
+        Answer clearly, accurately, and concisely.
+
+        Continue the following conversation naturally.
+
+        Conversation:
+        {history_text}
+
+        Generate a new and improved response to the latest user message.
+
+        Assistant:
+        """
+
+        # Call Gemini
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt
+        )
+
+        ai_response = response.text
+
+        if not ai_response:
+            return JsonResponse(
+                {"error": "Gemini returned an empty response."},
+                status=500
+            )
+
+        # Delete old response only AFTER new response succeeds
+        if last_assistant_message:
+            last_assistant_message.delete()
+
+        # Save regenerated response
+        Message.objects.create(
+            conversation=conversation,
+            role="assistant",
+            content=ai_response
+        )
+
+        return JsonResponse({
+            "success": True,
+            "response": ai_response
+        })
+
+    except Conversation.DoesNotExist:
+
+        return JsonResponse(
+            {"error": "Conversation not found."},
+            status=404
+        )
+
+    except Exception as error:
+
+        print(
+            "Regenerate error:",
+            repr(error)
+        )
+
+        error_message = str(error)
+
+        # Gemini free-tier quota exceeded
+        if (
+            "RESOURCE_EXHAUSTED" in error_message
+            or "429" in error_message
+            or "quota" in error_message.lower()
+        ):
+            return JsonResponse(
+                {
+                    "error": (
+                        "You've reached today's free AI usage limit. "
+                        "Please try again after your quota resets."
+                    )
+                },
+                status=429
+            )
+
+        # Other errors
+        return JsonResponse(
+            {
+                "error": (
+                    "Unable to regenerate the response right now. "
+                    "Please try again later."
+                )
+            },
+            status=500
         )
