@@ -160,9 +160,9 @@ def register_view(request):
             "text/html"
         )
 
-        welcome_email.send(
-            fail_silently=True
-        )
+        # welcome_email.send(
+        #     fail_silently=True
+        # )
 
 
         # =========================
@@ -198,9 +198,9 @@ def register_view(request):
             "text/html"
         )
 
-        admin_email.send(
-            fail_silently=True
-        )
+        # admin_email.send(
+        #     fail_silently=True
+        # )
 
 
         # =========================
