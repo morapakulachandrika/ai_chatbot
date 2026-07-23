@@ -26,9 +26,16 @@ GEMINI_API_KEY= os.getenv("GEMINI_API_KEY=")
 SECRET_KEY = 'django-insecure-ly__ldut$2o1hdy#c$q^w)$$=q@gi67klws^16-57c2-n0&$1t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get(
+    "DEBUG",
+    "True"
+).lower() == "true"
 
-ALLOWED_HOSTS = ["*",'192.168.0.101']
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    ".onrender.com",
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://192.168.0.101:9000",
@@ -54,6 +61,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    "django.contrib.sessions.middleware.SessionMiddleware",
 ]
 
 ROOT_URLCONF = 'chatbot_project.urls'
@@ -125,6 +137,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 
