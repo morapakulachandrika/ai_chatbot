@@ -280,9 +280,6 @@
             margin-bottom: 20px;
         }
 
-        .user-row {
-            justify-content: flex-end;
-        }
 
         .assistant-row {
             justify-content: flex-start;
@@ -296,10 +293,22 @@
             word-wrap: break-word;
         }
 
-        .user-message {
-            background: #6c4cff;
-            color: white;
-            border-bottom-right-radius: 4px;
+        .user-row {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+
+       
+
+       
+
+        
+
+        .user-message-wrapper:hover
+       {
+            opacity: 1;
+            visibility: visible;
         }
 
         .assistant-message {
@@ -930,6 +939,175 @@
             border-top: 1px solid #333;
             background: #171725;
         }
+       /* =========================
+        USER MESSAGE
+        ========================= */
+
+        .user-row {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .user-message-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+
+            width: fit-content;
+            max-width: 70%;
+        }
+
+        .user-message-wrapper .user-message {
+            display: inline-block;
+
+            width: fit-content;
+            max-width: 100%;
+
+            padding: 13px 17px;
+
+            background: #6c4cff;
+            color: #ffffff;
+
+            border-radius: 15px;
+            border-bottom-right-radius: 4px;
+
+            line-height: 1.5;
+
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            word-break: normal;
+        }
+
+/* USER COPY + EDIT BUTTONS */
+
+        .user-message-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+
+            margin-top: 5px;
+
+            opacity: 0;
+            visibility: hidden;
+
+            transition:
+                opacity 0.2s ease,
+                visibility 0.2s ease;
+        }
+
+        .user-message-wrapper:hover .user-message-actions {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .user-message-actions .message-action-button {
+            width: 30px;
+            height: 30px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 0;
+
+            border: none;
+            border-radius: 7px;
+
+            background: transparent;
+            color: #555;
+
+            cursor: pointer;
+        }
+
+    .user-message-actions .message-action-button:hover {
+        background: #eeeeee;
+    }
+    .voice-button {
+    width: 42px !important;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border: none !important;
+    border-radius: 50% !important;
+
+    background: transparent !important;
+    color: #555 !important;
+
+    font-size: 18px !important;
+    cursor: pointer;
+}
+
+.voice-button:hover {
+    background: #f0f0f0 !important;
+}
+
+.voice-button.listening {
+    background: #ffe5e5 !important;
+}
+.voice-button {
+    width: 40px !important;
+    height: 40px;
+
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 50% !important;
+
+    background: transparent !important;
+    color: #555 !important;
+
+    cursor: pointer;
+}
+
+.voice-button:hover {
+    background: #f1f1f1 !important;
+    color: #222 !important;
+}
+
+.voice-button.listening {
+    background: #f1edff !important;
+    color: #6847ff !important;
+}
+    #sendButton {
+    position: relative;
+}
+
+#sendButton::after {
+    content: attr(data-tooltip);
+
+    position: absolute;
+    bottom: 50px;
+    right: 0;
+
+    padding: 6px 10px;
+
+    background: #222;
+    color: white;
+
+    font-size: 12px;
+    white-space: nowrap;
+
+    border-radius: 6px;
+
+    opacity: 0;
+    visibility: hidden;
+
+    pointer-events: none;
+}
+
+#sendButton:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
           
     </style>
 
@@ -1267,12 +1445,41 @@
         placeholder="Ask anything..."
         autocomplete="off"
     >
+    <button
+    type="button"
+    id="voiceButton"
+    class="voice-button"
+    title="Voice input"
+>
+    <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    >
+        <rect
+            x="9"
+            y="2"
+            width="6"
+            height="12"
+            rx="3"
+        ></rect>
 
+        <path d="M5 10a7 7 0 0 0 14 0"></path>
+        <path d="M12 17v5"></path>
+        <path d="M8 22h8"></path>
+    </svg>
+</button>
 
     <!-- SEND BUTTON -->
     <button
-        type="button"
-        id="sendButton"
+    id="sendButton"
+    type="button"
+    data-tooltip="Send message"
     >
         ➤
     </button>
@@ -1366,6 +1573,82 @@
 
         const imageInput = document.getElementById("imageInput");
         const attachmentPreview = document.getElementById("attachmentPreview" );
+        const voiceButton =
+    document.getElementById("voiceButton");
+
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+
+            const recognition =
+                new SpeechRecognition();
+
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = "en-IN";
+
+
+            voiceButton.addEventListener(
+                "click",
+                function () {
+
+                    recognition.start();
+
+                    voiceButton.classList.add(
+                "listening"
+            );
+
+            voiceButton.title =
+                "Listening...";
+        }
+    );
+
+
+        recognition.onresult =
+            function (event) {
+
+                const spokenText =
+                    event.results[0][0].transcript;
+
+                messageInput.value =
+                    spokenText;
+
+                messageInput.focus();
+            };
+
+
+        recognition.onend =
+            function () {
+
+                voiceButton.classList.remove(
+                    "listening"
+                );
+
+                voiceButton.title =
+                    "Voice input";
+            };
+
+
+        recognition.onerror =
+            function (event) {
+
+                console.error(
+                    "Voice recognition error:",
+                    event.error
+                );
+
+                voiceButton.classList.remove(
+                    "listening"
+                );
+            };
+
+        } else {
+
+            voiceButton.style.display =
+                "none";
+        }
 
         let selectedAttachments = [];
         // Open / close attachment menu
@@ -1539,7 +1822,7 @@
 
             // Disable button while waiting
             sendButton.disabled = true;
-
+            sendButton.dataset.tooltip = "Please wait...";
 
             // Hide welcome screen
             welcomeScreen.style.display = "none";
@@ -1611,12 +1894,16 @@
 
                 if (!response.ok) {
 
-                    throw new Error(
-                        data.error ||
-                        "Unable to send message."
-                    );
+                if (response.status === 429) {
 
+                    disableChatForQuota();
                 }
+
+                throw new Error(
+                    data.error ||
+                    "Unable to send message."
+                );
+            }
 
 
                 // Save conversation ID
@@ -1648,7 +1935,7 @@
 
             catch (error) {
 
-                // Remove thinking dots if request fails
+                // Remove thinking dots
                 hideThinkingIndicator();
 
                 console.error(
@@ -1656,20 +1943,27 @@
                     error
                 );
 
+                // Show actual backend error
                 addMessage(
+                    error.message ||
                     "Unable to get a response. Please try again.",
                     "error"
                 );
 
+                // IMPORTANT:
+                // Do not clear selectedAttachments here.
+                // The image/file will remain for retry.
             }
 
             finally {
 
-                sendButton.disabled = false;
+            hideThinkingIndicator();
 
-                messageInput.focus();
+            sendButton.disabled = false;
 
-            }
+            sendButton.dataset.tooltip =
+                "Send message";
+        }
 
         }
 
@@ -1693,28 +1987,280 @@
     // USER MESSAGE
     // =========================
 
-    if (role === "user") {
+    // =========================
+// USER MESSAGE
+// =========================
 
-        row.classList.add(
-            "user-row"
-        );
+if (role === "user") {
 
-        const messageBubble =
-            document.createElement("div");
+    row.classList.add(
+        "user-row"
+    );
 
-        messageBubble.classList.add(
-            "message",
-            "user-message"
-        );
+    // Wrapper for bubble + actions
+    const wrapper =
+        document.createElement("div");
 
-        messageBubble.textContent =
-            text;
+    wrapper.classList.add(
+        "user-message-wrapper"
+    );
 
-        row.appendChild(
-            messageBubble
-        );
 
-    }
+    // User message bubble
+    const messageBubble =
+        document.createElement("div");
+
+    messageBubble.classList.add(
+        "message",
+        "user-message"
+    );
+
+    messageBubble.textContent =
+        text;
+
+
+    // Actions container
+    const actions =
+        document.createElement("div");
+
+    actions.classList.add(
+        "user-message-actions"
+    );
+
+
+    // =========================
+    // COPY BUTTON
+    // =========================
+
+    const copyButton =
+        document.createElement("button");
+
+    copyButton.type = "button";
+
+    copyButton.classList.add(
+        "message-action-button"
+    );
+
+    copyButton.title =
+        "Copy";
+
+    copyButton.innerHTML = `
+        <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <rect
+                x="9"
+                y="9"
+                width="11"
+                height="11"
+                rx="2"
+            ></rect>
+
+            <path
+                d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+            ></path>
+        </svg>
+    `;
+
+    copyButton.addEventListener(
+        "click",
+        async function() {
+
+            try {
+
+                if (
+                    navigator.clipboard &&
+                    window.isSecureContext
+                ) {
+
+                    await navigator.clipboard.writeText(
+                        text
+                    );
+
+                } else {
+
+                    const textarea =
+                        document.createElement(
+                            "textarea"
+                        );
+
+                    textarea.value =
+                        text;
+
+                    textarea.style.position =
+                        "fixed";
+
+                    textarea.style.opacity =
+                        "0";
+
+                    document.body.appendChild(
+                        textarea
+                    );
+
+                    textarea.select();
+
+                    document.execCommand(
+                        "copy"
+                    );
+
+                    textarea.remove();
+                }
+
+
+                copyButton.textContent =
+                    "✓";
+
+                copyButton.title =
+                    "Copied";
+
+
+                setTimeout(
+                    function() {
+
+                        copyButton.innerHTML = `
+                            <svg
+                                width="17"
+                                height="17"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <rect
+                                    x="9"
+                                    y="9"
+                                    width="11"
+                                    height="11"
+                                    rx="2"
+                                ></rect>
+
+                                <path
+                                    d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                ></path>
+                            </svg>
+                        `;
+
+                        copyButton.title =
+                            "Copy";
+
+                    },
+                    1500
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "User message copy failed:",
+                    error
+                );
+
+            }
+
+        }
+    );
+
+
+    // =========================
+    // EDIT BUTTON
+    // =========================
+
+    const editButton =
+        document.createElement("button");
+
+    editButton.type =
+        "button";
+
+    editButton.classList.add(
+        "message-action-button"
+    );
+
+    editButton.title =
+        "Edit message";
+
+    editButton.innerHTML = `
+        <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path
+                d="M12 20h9"
+            ></path>
+
+            <path
+                d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
+            ></path>
+        </svg>
+    `;
+
+
+    editButton.addEventListener(
+        "click",
+        function() {
+
+            messageInput.value =
+                text;
+
+            messageInput.focus();
+
+            messageInput.setSelectionRange(
+                text.length,
+                text.length
+            );
+
+            // Trigger input event
+            // so your send button updates
+            messageInput.dispatchEvent(
+                new Event(
+                    "input",
+                    {
+                        bubbles: true
+                    }
+                )
+            );
+
+        }
+    );
+
+
+    // Add action buttons
+    actions.appendChild(
+        copyButton
+    );
+
+    actions.appendChild(
+        editButton
+    );
+
+
+    // Add bubble and actions
+    wrapper.appendChild(
+        messageBubble
+    );
+
+    wrapper.appendChild(
+        actions
+    );
+
+    row.appendChild(
+        wrapper
+    );
+
+}
 
 
     // =========================
@@ -2776,9 +3322,186 @@ async function deleteConversation(event, id) {
             );
         }
     }
+    function copyUserMessage(button) {
+
+    const messageRow =
+        button.closest(".message");
+
+    const messageBubble =
+        messageRow.querySelector(
+            ".message-content"
+        );
+
+    if (!messageBubble) {
+        return;
+    }
+
+    const text =
+        messageBubble.innerText;
+
+    navigator.clipboard.writeText(text)
+        .then(() => {
+
+            showToast(
+                "Message copied"
+            );
+
+        })
+        .catch(error => {
+
+            console.error(
+                "Copy failed:",
+                error
+            );
+
+        });
+}
 
 
-    
+function editUserMessage(button) {
+
+    const messageRow =
+        button.closest(".message");
+
+    const messageBubble =
+        messageRow.querySelector(
+            ".message-content"
+        );
+
+    if (!messageBubble) {
+        return;
+    }
+
+    const text =
+        messageBubble.innerText;
+
+    // Put old prompt back into input
+    messageInput.value = text;
+
+    // Focus input
+    messageInput.focus();
+
+    // Move cursor to end
+    messageInput.setSelectionRange(
+        text.length,
+        text.length
+    );
+
+    // Enable send button
+    updateSendButtonState();
+}
+function disableAttachmentsForQuota() {
+
+    // Disable file and image inputs
+    fileInput.disabled = true;
+    imageInput.disabled = true;
+
+    // Remove currently selected attachments
+    selectedAttachments = [];
+
+    fileInput.value = "";
+    imageInput.value = "";
+
+    renderAttachmentPreviews();
+
+    // Optional: disable attachment + button
+    const attachmentButton =
+        document.getElementById("attachmentButton");
+
+    if (attachmentButton) {
+
+        attachmentButton.disabled = true;
+
+        attachmentButton.title =
+            "Daily AI quota reached";
+    }
+}
+    function disableChatForQuota() {
+
+    // =========================
+    // CLEAR EXISTING ATTACHMENTS
+    // =========================
+
+    selectedAttachments = [];
+
+    fileInput.value = "";
+    imageInput.value = "";
+
+    renderAttachmentPreviews();
+
+
+    // =========================
+    // DISABLE FILES AND IMAGES
+    // =========================
+
+    fileInput.disabled = true;
+    imageInput.disabled = true;
+
+
+    // =========================
+    // DISABLE MESSAGE INPUT
+    // =========================
+
+    messageInput.disabled = true;
+
+    messageInput.placeholder =
+        "Daily AI usage limit reached";
+
+
+    // =========================
+    // DISABLE SEND BUTTON
+    // =========================
+
+    sendButton.disabled = true;
+
+    sendButton.dataset.tooltip =
+        "Daily AI usage limit reached";
+
+
+    // =========================
+    // DISABLE VOICE BUTTON
+    // =========================
+
+    const voiceButton =
+        document.getElementById(
+            "voiceButton"
+        );
+
+    if (voiceButton) {
+
+        voiceButton.disabled = true;
+
+        voiceButton.title =
+            "Daily AI usage limit reached";
+    }
+
+
+    // =========================
+    // DISABLE ATTACHMENT BUTTON
+    // =========================
+
+    const attachmentButton =
+        document.getElementById(
+            "attachmentButton"
+        );
+
+    if (attachmentButton) {
+
+        attachmentButton.disabled = true;
+
+        attachmentButton.title =
+            "Daily AI usage limit reached";
+    }
+
+
+    // =========================
+    // SHOW MESSAGE
+    // =========================
+
+    showToast(
+        "Today's AI usage limit has been reached."
+    );
+}
     
     </script>
 

@@ -13,6 +13,10 @@ from django.http import JsonResponse
 from .models import Conversation, Message
 from google import genai
 from google.genai import types
+from docx import Document
+import io
+from pptx import Presentation
+
 client = genai.Client(
     api_key=settings.GEMINI_API_KEY
 )
@@ -375,8 +379,35 @@ def send_message(request):
             {"error": "POST request required."},
             status=405
         )
+        # =========================
+    # DAILY AI REQUEST LIMIT
+    # =========================
+
+    DAILY_REQUEST_LIMIT = 20
+
+    request_count = request.session.get(
+        "ai_request_count",
+        0
+    )
+
+    if request_count >= DAILY_REQUEST_LIMIT:
+
+        return JsonResponse(
+            {
+                "error": (
+                    "Today's AI usage limit "
+                    "has been reached."
+                ),
+                "remaining_requests": 0
+            },
+            status=429
+        )
 
     try:
+        # =========================
+        # GET MESSAGE AND FILES
+        # =========================
+
         user_message = request.POST.get(
             "message",
             ""
@@ -387,17 +418,17 @@ def send_message(request):
         )
 
         attachments = request.FILES.getlist(
-                "attachments"
-            )
+            "attachments"
+        )
 
         if not user_message and not attachments:
             return JsonResponse(
-        {
-            "error":
-            "Please enter a message or attach a file."
-        },
-        status=400
-    )
+                {
+                    "error":
+                    "Please enter a message or attach a file."
+                },
+                status=400
+            )
 
         # =========================
         # GET OR CREATE CONVERSATION
@@ -413,25 +444,55 @@ def send_message(request):
 
             except Conversation.DoesNotExist:
                 return JsonResponse(
-                    {"error": "Conversation not found."},
+                    {
+                        "error":
+                        "Conversation not found."
+                    },
                     status=404
                 )
 
         else:
 
+            if user_message:
+                conversation_title = user_message[:50]
+
+            elif attachments:
+                conversation_title = attachments[0].name[:50]
+
+            else:
+                conversation_title = "New Chat"
+
             conversation = Conversation.objects.create(
                 user=request.user,
-                title=user_message[:50]
+                title=conversation_title
             )
 
         # =========================
         # SAVE USER MESSAGE
         # =========================
 
+        message_content = user_message
+
+        if attachments:
+
+            attachment_names = ", ".join(
+                attachment.name
+                for attachment in attachments
+            )
+
+            if message_content:
+                message_content += (
+                    f"\n\nAttachments: {attachment_names}"
+                )
+            else:
+                message_content = (
+                    f"Attachments: {attachment_names}"
+                )
+
         Message.objects.create(
             conversation=conversation,
             role="user",
-            content=user_message
+            content=message_content
         )
 
         # =========================
@@ -463,43 +524,197 @@ def send_message(request):
         # =========================
 
         prompt = f"""
-            You are a helpful, professional AI assistant.
+                You are a helpful and professional AI assistant.
 
-            Answer clearly, accurately, and concisely.
+                Answer clearly and accurately.
 
-            Continue the following conversation naturally.
+                Continue the conversation naturally.
 
-            Conversation:
-            {history_text}
+                Conversation:
+                {history_text}
 
-            Assistant:
-        """
+                Current user request:
+                {user_message}
+
+                If the user attached files or images,
+                carefully analyze all attached content
+                and use it when answering.
+
+                Assistant:
+                """
 
         # =========================
-
-
-                # =========================
-        # PREPARE CONTENT FOR GEMINI
+        # PREPARE GEMINI CONTENT
         # =========================
 
-        gemini_contents = [prompt]
+        gemini_contents = [
+            prompt
+        ]
 
         for attachment in attachments:
 
-            # Read uploaded file
             file_bytes = attachment.read()
 
-            # Add file/image to Gemini request
-            gemini_contents.append(
-                types.Part.from_bytes(
-                    data=file_bytes,
-                    mime_type=attachment.content_type
-                )
+            file_name = (
+                attachment.name.lower()
             )
 
+            # =====================
+            # PDF
+            # =====================
+
+            if file_name.endswith(".pdf"):
+
+                gemini_contents.append(
+                    types.Part.from_bytes(
+                        data=file_bytes,
+                        mime_type="application/pdf"
+                    )
+                )
+
+            # =====================
+            # DOCX
+            # =====================
+
+            elif file_name.endswith(".docx"):
+
+                document = Document(
+                    io.BytesIO(file_bytes)
+                )
+
+                extracted_text = "\n".join(
+                    paragraph.text
+                    for paragraph
+                    in document.paragraphs
+                    if paragraph.text.strip()
+                )
+
+                gemini_contents.append(
+                    f"""
+                Attached Word document:
+                {attachment.name}
+
+                Document content:
+
+                {extracted_text}
+                """
+                )
+
+            # =====================
+            # TXT
+            # =====================
+
+            elif file_name.endswith(".txt"):
+
+                extracted_text = (
+                    file_bytes.decode(
+                        "utf-8",
+                        errors="ignore"
+                    )
+                )
+
+                gemini_contents.append(
+                    f"""
+            Attached text document:
+            {attachment.name}
+
+            Document content:
+
+            {extracted_text}
+            """
+                )
+            elif file_name.endswith(".pptx"):
+
+                presentation = Presentation(
+                    io.BytesIO(file_bytes)
+                )
+
+                slide_texts = []
+
+                for slide_number, slide in enumerate(
+                    presentation.slides,
+                    start=1
+                ):
+
+                    current_slide_text = []
+
+                    for shape in slide.shapes:
+
+                        if hasattr(shape, "text"):
+
+                            text = shape.text.strip()
+
+                            if text:
+                                current_slide_text.append(
+                                    text
+                                )
+
+                    if current_slide_text:
+
+                        slide_texts.append(
+                            f"""
+                            Slide {slide_number}:
+                            {' '.join(current_slide_text)}
+                            """
+                        )
+
+                extracted_text = "\n".join(
+                    slide_texts
+                )
+
+                gemini_contents.append(
+                    f"""
+                    The user attached a PowerPoint presentation:
+                    {attachment.name}
+
+                    Presentation content:
+
+                    {extracted_text}
+
+                    User request:
+                    {user_message}
+
+                    Analyze the presentation and answer
+                    based on its content.
+                    """
+                )
+            # =====================
+            # IMAGE
+            # =====================
+
+            elif (
+                attachment.content_type
+                and
+                attachment.content_type.startswith(
+                    "image/"
+                )
+            ):
+
+                gemini_contents.append(
+                    types.Part.from_bytes(
+                        data=file_bytes,
+                        mime_type=attachment.content_type
+                    )
+                )
+
+            # =====================
+            # UNSUPPORTED FILE
+            # =====================
+
+            else:
+
+                return JsonResponse(
+                    {
+                        "error": (
+                            f"Unsupported file type: "
+                            f"{attachment.name}"
+                        )
+                    },
+                    status=400
+                )
 
         # =========================
-        # GET GEMINI RESPONSE
+        # CALL GEMINI
         # =========================
 
         response = client.models.generate_content(
@@ -508,6 +723,15 @@ def send_message(request):
         )
 
         ai_response = response.text
+
+        if not ai_response:
+            return JsonResponse(
+                {
+                    "error":
+                    "Gemini returned an empty response."
+                },
+                status=500
+            )
 
         # =========================
         # SAVE AI RESPONSE
@@ -520,23 +744,20 @@ def send_message(request):
         )
 
         # =========================
-        # RETURN RESPONSE
+        # RETURN SUCCESS RESPONSE
         # =========================
 
         return JsonResponse({
             "success": True,
-            "conversation_id": conversation.id,
-            "conversation_title": conversation.title,
-            "user_message": user_message,
-            "ai_response": ai_response,
+            "conversation_id":
+                conversation.id,
+            "conversation_title":
+                conversation.title,
+            "user_message":
+                user_message,
+            "ai_response":
+                ai_response,
         })
-
-    except json.JSONDecodeError:
-
-        return JsonResponse(
-            {"error": "Invalid JSON request."},
-                status=400
-        )
 
     except Exception as error:
 
@@ -547,26 +768,39 @@ def send_message(request):
 
         error_message = str(error)
 
+        # =========================
+        # GEMINI QUOTA ERROR
+        # =========================
+
         if (
-            "RESOURCE_EXHAUSTED" in error_message
+            "RESOURCE_EXHAUSTED"
+            in error_message
             or "429" in error_message
-            or "quota" in error_message.lower()
+            or "quota"
+            in error_message.lower()
         ):
+
             return JsonResponse(
                 {
                     "error": (
-                        "You've reached today's free AI usage limit. "
-                        "Please try again after your quota resets."
+                        "You've reached today's "
+                        "free AI usage limit. "
+                        "Please try again after "
+                        "your quota resets."
                     )
                 },
                 status=429
             )
 
+        # =========================
+        # OTHER ERRORS
+        # =========================
+
         return JsonResponse(
             {
                 "error": (
-                    "Unable to get an AI response right now. "
-                    "Please try again later."
+                    "Unable to get an AI response "
+                    "right now. Please try again later."
                 )
             },
             status=500
